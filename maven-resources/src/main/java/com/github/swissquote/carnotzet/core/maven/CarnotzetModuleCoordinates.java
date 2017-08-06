@@ -6,6 +6,7 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import com.github.swissquote.carnotzet.core.CarnotzetDefinitionException;
+import com.github.swissquote.carnotzet.core.CarnotzetModuleId;
 
 import org.jboss.shrinkwrap.resolver.api.maven.PackagingType;
 import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenCoordinate;
@@ -47,6 +48,10 @@ public class CarnotzetModuleCoordinates implements MavenCoordinate {
 		return groupId + ":" + artifactId + ":jar:" + version;
 	}
 
+	public CarnotzetModuleId getModuleId() {
+		return new CarnotzetModuleId(this.getGroupId(), this.getArtifactId(), this.getVersion());
+	}
+
 	public static CarnotzetModuleCoordinates fromPom(Path pom) {
 		Model result;
 		try {
@@ -67,5 +72,5 @@ public class CarnotzetModuleCoordinates implements MavenCoordinate {
 		}
 		return new CarnotzetModuleCoordinates(groupId, result.getArtifactId(), version);
 	}
-	
+
 }

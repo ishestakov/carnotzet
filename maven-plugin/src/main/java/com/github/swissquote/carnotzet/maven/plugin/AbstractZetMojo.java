@@ -22,7 +22,7 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 import com.github.swissquote.carnotzet.core.Carnotzet;
 import com.github.swissquote.carnotzet.core.CarnotzetConfig;
 import com.github.swissquote.carnotzet.core.CarnotzetExtension;
-import com.github.swissquote.carnotzet.core.maven.CarnotzetModuleCoordinates;
+import com.github.swissquote.carnotzet.core.CarnotzetModuleId;
 import com.github.swissquote.carnotzet.core.runtime.api.ContainerOrchestrationRuntime;
 import com.github.swissquote.carnotzet.core.runtime.log.LogListener;
 import com.github.swissquote.carnotzet.core.runtime.log.StdOutLogPrinter;
@@ -87,7 +87,7 @@ public abstract class AbstractZetMojo extends AbstractMojo {
 		ServiceLoader.load(CarnotzetExtensionsFactory.class).iterator().forEachRemaining(factories::add);
 
 		CarnotzetConfig config = CarnotzetConfig.builder()
-				.topLevelModuleId(new CarnotzetModuleCoordinates(project.getGroupId(), project.getArtifactId(), project.getVersion()))
+				.topLevelModuleId(new CarnotzetModuleId(project.getGroupId(), project.getArtifactId(), project.getVersion()))
 				.resourcesPath(Paths.get(project.getBuild().getDirectory(), "carnotzet"))
 				.topLevelModuleResourcesPath(project.getBasedir().toPath().resolve("src/main/resources"))
 				.extensions(findRuntimeExtensions(factories))

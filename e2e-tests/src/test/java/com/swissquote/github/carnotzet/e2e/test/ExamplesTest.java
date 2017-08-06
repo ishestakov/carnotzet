@@ -49,7 +49,7 @@ public class ExamplesTest {
 	@BeforeClass
 	public static void setup() throws Throwable {
 		CarnotzetConfig config = CarnotzetConfig.builder()
-				.topLevelModuleId(fromPom(Paths.get("../e2e-tests-carnotzet/pom.xml")))
+				.topLevelModuleId(fromPom(Paths.get("../e2e-tests-carnotzet/pom.xml")).getModuleId())
 				.build();
 		Carnotzet carnotzet = new Carnotzet(config);
 		runtime = new DockerComposeRuntime(carnotzet);

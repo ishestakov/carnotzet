@@ -11,17 +11,23 @@ import org.jboss.shrinkwrap.resolver.api.maven.MavenResolvedArtifact;
 import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenCoordinate;
 
 import com.github.swissquote.carnotzet.core.CarnotzetModule;
+import com.github.swissquote.carnotzet.core.CarnotzetModuleId;
+import com.github.swissquote.carnotzet.core.DependencyResolver;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
-public class MavenDependencyResolver {
+public class MavenDependencyResolver implements DependencyResolver {
 
-	private final Function<MavenCoordinate, String> moduleNameProvider;
+	private static final Function<MavenCoordinate, CarnotzetModuleId> moduleIdTransformer = (coordinate) ->
+			new CarnotzetModuleId(coordinate.getGroupId(), coordinate.getArtifactId(), coordinate.getVersion());
 
-	public List<CarnotzetModule> resolve(MavenCoordinate topLevelModuleId) {
+	private final Function<CarnotzetModuleId, String> moduleNameProvider;
+
+	@Override
+	public List<CarnotzetModule> resolve(CarnotzetModuleId topLevelModuleId) {
 		List<CarnotzetModule> result = new ArrayList<>();
 
 		String topLevelModuleName = moduleNameProvider.apply(topLevelModuleId);
@@ -29,16 +35,18 @@ public class MavenDependencyResolver {
 		//We trust that shrinkwrap resolver returns the order we expect
 		List<MavenResolvedArtifact> resolvedDependencies = Arrays.stream(Maven.configureResolver()//.workOffline()
 				.resolve(topLevelModuleId.getGroupId() + ":" + topLevelModuleId.getArtifactId() + ":" + topLevelModuleId.getVersion())
-				.withTransitivity().asResolvedArtifact()).filter((artifact) -> moduleNameProvider.apply(artifact.getCoordinate()) != null)
+				.withTransitivity().asResolvedArtifact())
+				.filter((artifact) -> moduleNameProvider.apply(moduleIdTransformer.apply(artifact.getCoordinate())) != null)
 				.collect(Collectors.toList());
 
 		log.debug("Resolved dependencies using shrinkwrap : " + resolvedDependencies);
 
 		for (MavenResolvedArtifact artifact : resolvedDependencies) {
-			String moduleName = moduleNameProvider.apply(artifact.getCoordinate());
-
+			MavenCoordinate coordinate = artifact.getCoordinate();
+			String moduleName = moduleNameProvider.apply(moduleIdTransformer.apply(coordinate));
+			CarnotzetModuleId moduleId = new CarnotzetModuleId(coordinate.getGroupId(), coordinate.getArtifactId(), coordinate.getVersion());
 			CarnotzetModule module = CarnotzetModule.builder()
-					.id(artifact.getCoordinate())
+					.id(moduleId)
 					.name(moduleName)
 					.topLevelModuleName(topLevelModuleName)
 					.build();

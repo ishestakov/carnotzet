@@ -22,6 +22,7 @@
 		<module>docker-compose</module>
 		<module>e2e-tests-carnotzet</module>
 		<module>e2e-tests</module>
+		<module>maven-resources</module>
 	</modules>
 
 	<licenses>

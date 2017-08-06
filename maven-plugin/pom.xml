@@ -15,7 +15,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.github.swissquote</groupId>
-			<artifactId>carnotzet-core</artifactId>
+			<artifactId>carnotzet-maven</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>

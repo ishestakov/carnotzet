@@ -3,8 +3,6 @@ package com.github.swissquote.carnotzet.core;
 import java.nio.file.Path;
 import java.util.List;
 
-import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenCoordinate;
-
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
@@ -14,7 +12,7 @@ import lombok.Value;
 public class CarnotzetConfig {
 
 	@NonNull
-	private final MavenCoordinate topLevelModuleId;
+	private final CarnotzetModuleId topLevelModuleId;
 
 	/**
 	 * defaults to a temporary folder

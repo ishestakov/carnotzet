@@ -18,11 +18,12 @@ import java.util.function.BiPredicate;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
-import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenCoordinate;
 
 import com.github.swissquote.carnotzet.core.CarnotzetDefinitionException;
 import com.github.swissquote.carnotzet.core.CarnotzetModule;
 import com.github.swissquote.carnotzet.core.config.FileMerger;
+import com.github.swissquote.carnotzet.core.CarnotzetModuleId;
+import com.github.swissquote.carnotzet.core.ResourcesManager;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +33,7 @@ import net.lingala.zip4j.exception.ZipException;
 
 @Slf4j
 @RequiredArgsConstructor
-public class ResourcesManager {
+public class MavenResourcesManager implements ResourcesManager {
 
 	private static final int FIND_MAX_DEPTH = 200;
 
@@ -43,7 +44,7 @@ public class ResourcesManager {
 	private final Path topLevelModuleResourcesPath;
 	private final ServiceLoader<FileMerger> fileMergers;
 
-	public ResourcesManager(Path resourcesRoot, Path topLevelModuleResourcesPath) {
+	public MavenResourcesManager(Path resourcesRoot, Path topLevelModuleResourcesPath) {
 		this.resourcesRoot = resourcesRoot;
 		this.expandedJars = resourcesRoot.resolve("expanded-jars");
 		this.resolved = resourcesRoot.resolve("resolved");
@@ -51,6 +52,7 @@ public class ResourcesManager {
 		this.fileMergers = ServiceLoader.load(FileMerger.class);
 	}
 
+	@Override
 	public Path getModuleResourcesPath(CarnotzetModule module) {
 		return resolved.resolve(module.getName());
 	}
@@ -62,6 +64,7 @@ public class ResourcesManager {
 	 *
 	 * @param modules the list of modules to extract
 	 */
+	@Override
 	public void extractResources(List<CarnotzetModule> modules) {
 		try {
 			log.debug("Extracting jars resources to [{}]", resourcesRoot);
@@ -92,6 +95,7 @@ public class ResourcesManager {
 	 *
 	 * @param modules the list of modules to resolve , ordered from leaves to top level module
 	 */
+	@Override
 	public void resolveResources(List<CarnotzetModule> modules) {
 		try {
 			log.debug("Resolving resources overrides and merges in [{}]", resourcesRoot);
@@ -225,14 +229,15 @@ public class ResourcesManager {
 		return null;
 	}
 
-	private ZipFile getJarFile(MavenCoordinate id) throws ZipException {
+	private ZipFile getJarFile(CarnotzetModuleId id) throws ZipException {
 		File jarFile = Maven.configureResolver().workOffline()
 				.resolve(id.getGroupId() + ":" + id.getArtifactId() + ":" + id.getVersion())
 				.withoutTransitivity().asSingleFile();
 		return new ZipFile(jarFile);
 	}
 
-	public void copyModuleResources(MavenCoordinate moduleId, Path moduleResourcesPath) {
+	@Override
+	public void copyModuleResources(CarnotzetModuleId moduleId, Path moduleResourcesPath) {
 		try {
 			ZipFile f = this.getJarFile(moduleId);
 			f.extractAll(moduleResourcesPath.toAbsolutePath().toString());

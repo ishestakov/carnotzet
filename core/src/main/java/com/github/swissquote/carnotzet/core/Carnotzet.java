@@ -17,15 +17,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenCoordinate;
-
-import com.github.swissquote.carnotzet.core.maven.MavenDependencyResolver;
-import com.github.swissquote.carnotzet.core.maven.ResourcesManager;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +43,7 @@ public class Carnotzet {
 
 	private List<CarnotzetModule> modules;
 
-	private final MavenDependencyResolver resolver;
+	private final DependencyResolver resolver;
 
 	private final ResourcesManager resourceManager;
 
@@ -74,7 +70,7 @@ public class Carnotzet {
 		if (resourcesPath == null) {
 			resourcesPath = Paths.get("/tmp/carnotzet_" + System.nanoTime());
 		}
-		this.resourceManager = new ResourcesManager(resourcesPath, config.getTopLevelModuleResourcesPath());
+		this.resourceManager = lookupResourcesManager(config, resourcesPath);
 
 		if (config.getDefaultDockerRegistry() != null) {
 			this.defaultContainerRegistry = config.getDefaultDockerRegistry();
@@ -88,8 +84,25 @@ public class Carnotzet {
 			this.propFileNames = Arrays.asList("carnotzet.properties");
 		}
 
-		resolver = new MavenDependencyResolver(this::getModuleName);
+		resolver = lookupDependencyResolver();
 
+	}
+
+	private DependencyResolver lookupDependencyResolver() {
+		ServiceLoader<DependencyResolverBuilder> builderLoader = ServiceLoader.load(DependencyResolverBuilder.class);
+		if (builderLoader.iterator().hasNext()) {
+			return builderLoader.iterator().next().withModuleNameTransformFunction(this::getModuleName).build();
+		}
+		throw new IllegalStateException("No service for DependencyResolverBuilder was provided");
+	}
+
+	private ResourcesManager lookupResourcesManager(CarnotzetConfig config, Path resourcesPath) {
+		ServiceLoader<ResourcesManagerBuilder> resourcesManagerBuilderLoader = ServiceLoader.load(ResourcesManagerBuilder.class);
+		if (resourcesManagerBuilderLoader.iterator().hasNext()) {
+			return resourcesManagerBuilderLoader.iterator().next().withResourcesPath(resourcesPath)
+					.withTopLevelModulePath(config.getTopLevelModuleResourcesPath()).build();
+		}
+		throw new IllegalStateException("No service for ResourcesManagerBuilder was provided");
 	}
 
 	public List<CarnotzetModule> getModules() {
@@ -212,7 +225,7 @@ public class Carnotzet {
 		return resourceManager.getResourcesRoot();
 	}
 
-	public String getModuleName(MavenCoordinate module) {
+	public String getModuleName(CarnotzetModuleId module) {
 		Matcher m = moduleFilterPattern.matcher(module.getArtifactId());
 		if (m.find()) {
 			return m.group(1);
